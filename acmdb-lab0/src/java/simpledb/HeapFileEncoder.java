@@ -200,7 +200,7 @@ public class HeapFileEncoder {
                 headerStream.writeByte(headerbyte);
             
             // pad the rest of the page with zeroes
-            
+
             for (i=0; i<(npagebytes - (recordcount * nrecbytes + nheaderbytes)); i++)
                 pageStream.writeByte(0);
             
