@@ -1,0 +1,9 @@
+I follow `README.md` and comments in the code to make design decisions.
+
+I keep API unchanged.
+
+I have not finished `BufferPool.java` as the comment expects. I am not sure how to deal with locks so I leave it to later labs.
+
+I spent about one day writing lab1. There are two confusing things I met during the coding:
+- According to `README.md` and comments, `HeapFile.iterator` should call `BufferPool.getPage` but I am not sure what `Permissions` should I fill in.
+- When writing `HeapFile.readPage`, I misunderstood the API `FileInputStream.read`. Later I realized that `RandomAccessFile` is what I need.
