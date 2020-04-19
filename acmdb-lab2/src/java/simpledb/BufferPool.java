@@ -128,6 +128,13 @@ public class BufferPool {
         // not necessary for lab1|lab2
     }
 
+    private void updateDirtiedPages(TransactionId tid, ArrayList<Page> dirtiedPages) {
+        for (Page dirtied : dirtiedPages) {
+            dirtied.markDirty(true, tid);
+            pages.put(dirtied.getId(), dirtied);
+        }
+    }
+
     /**
      * Add a tuple to the specified table on behalf of transaction tid.  Will
      * acquire a write lock on the page the tuple is added to and any other 
@@ -147,10 +154,7 @@ public class BufferPool {
         throws DbException, IOException, TransactionAbortedException {
         DbFile f = Database.getCatalog().getDatabaseFile(tableId);
         ArrayList<Page> dirtiedPages = f.insertTuple(tid, t);
-        for (Page dirtied : dirtiedPages) {
-            dirtied.markDirty(true, tid);
-            pages.put(dirtied.getId(), dirtied);
-        }
+        updateDirtiedPages(tid, dirtiedPages);
     }
 
     /**
@@ -168,8 +172,11 @@ public class BufferPool {
      */
     public  void deleteTuple(TransactionId tid, Tuple t)
         throws DbException, IOException, TransactionAbortedException {
-        // some code goes here
-        // not necessary for lab1
+        assert t.getRecordId() != null;
+        int tableId = t.getRecordId().getPageId().getTableId();
+        DbFile f = Database.getCatalog().getDatabaseFile(tableId);
+        ArrayList<Page> dirtiedPages = f.deleteTuple(tid, t);
+        updateDirtiedPages(tid, dirtiedPages);
     }
 
     /**
@@ -192,8 +199,7 @@ public class BufferPool {
         are removed from the cache so they can be reused safely
     */
     public synchronized void discardPage(PageId pid) {
-        // some code goes here
-        // not necessary for lab1
+        pages.remove(pid);
     }
 
     /**
