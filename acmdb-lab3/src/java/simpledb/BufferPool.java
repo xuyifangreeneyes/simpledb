@@ -132,7 +132,7 @@ public class BufferPool {
         for (Page dirtied : dirtiedPages) {
             dirtied.markDirty(true, tid);
             // evict some page when buffer pool is full?
-            pages.put(dirtied.getId(), dirtied);
+            pages.replace(dirtied.getId(), dirtied);
         }
     }
 
