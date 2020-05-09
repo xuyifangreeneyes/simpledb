@@ -33,6 +33,10 @@ public class IntField implements Field {
     }
 
     public boolean equals(Object field) {
+        if (this == field)
+            return true;
+        if (!(field instanceof IntField))
+            return false;
         return ((IntField) field).value == value;
     }
 
