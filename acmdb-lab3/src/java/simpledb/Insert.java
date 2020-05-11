@@ -1,5 +1,7 @@
 package simpledb;
 
+import java.io.IOException;
+
 /**
  * Inserts tuples read from the child operator into the tableId specified in the
  * constructor
@@ -7,11 +9,17 @@ package simpledb;
 public class Insert extends Operator {
 
     private static final long serialVersionUID = 1L;
+    private static final TupleDesc TD = new TupleDesc(new Type[] {Type.INT_TYPE}, new String[] {"number of inserted tuples"});
+
+    private final TransactionId tid;
+    private final int tableId;
+    private DbIterator child;
+    private boolean fetched = false;
 
     /**
      * Constructor.
      *
-     * @param t
+     * @param tid
      *            The transaction running the insert.
      * @param child
      *            The child operator from which to read tuples to be inserted.
@@ -21,26 +29,37 @@ public class Insert extends Operator {
      *             if TupleDesc of child differs from table into which we are to
      *             insert.
      */
-    public Insert(TransactionId t,DbIterator child, int tableId)
+    public Insert(TransactionId tid, DbIterator child, int tableId)
             throws DbException {
-        // some code goes here
+        if (!child.getTupleDesc().equals(Database.getCatalog().getTupleDesc(tableId))) {
+            throw new DbException("TupleDesc of child differs from table into which we are to insert");
+        }
+        this.tid = tid;
+        this.child = child;
+        this.tableId = tableId;
     }
 
     public TupleDesc getTupleDesc() {
-        // some code goes here
-        return null;
+        return TD;
     }
 
     public void open() throws DbException, TransactionAbortedException {
-        // some code goes here
+        child.open();
+        fetched = false;
+        super.open();
     }
 
     public void close() {
-        // some code goes here
+        child.close();
+        super.close();
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
-        // some code goes here
+        child.rewind();
+        fetched = false;
+        // ensure that Operator.next == null
+        super.close();
+        super.open();
     }
 
     /**
@@ -57,18 +76,32 @@ public class Insert extends Operator {
      * @see BufferPool#insertTuple
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
-        // some code goes here
-        return null;
+        if (fetched) {
+            return null;
+        }
+        int count = 0;
+        while (child.hasNext()) {
+            Tuple tuple = child.next();
+            try {
+                Database.getBufferPool().insertTuple(tid, tableId, tuple);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            ++count;
+        }
+        Tuple result = new Tuple(TD);
+        result.setField(0, new IntField(count));
+        fetched = true;
+        return result;
     }
 
     @Override
     public DbIterator[] getChildren() {
-        // some code goes here
-        return null;
+        return new DbIterator[] {child};
     }
 
     @Override
     public void setChildren(DbIterator[] children) {
-        // some code goes here
+        child = children[0];
     }
 }

@@ -9,35 +9,47 @@ import java.io.IOException;
 public class Delete extends Operator {
 
     private static final long serialVersionUID = 1L;
+    private static final TupleDesc TD = new TupleDesc(new Type[] {Type.INT_TYPE}, new String[] {"number of deleted tuples"});
+
+    private final TransactionId tid;
+    private DbIterator child;
+    private boolean fetched = false;
 
     /**
      * Constructor specifying the transaction that this delete belongs to as
      * well as the child to read from.
      * 
-     * @param t
+     * @param tid
      *            The transaction this delete runs in
      * @param child
      *            The child operator from which to read tuples for deletion
      */
-    public Delete(TransactionId t, DbIterator child) {
-        // some code goes here
+    public Delete(TransactionId tid, DbIterator child) {
+        this.tid = tid;
+        this.child = child;
     }
 
     public TupleDesc getTupleDesc() {
-        // some code goes here
-        return null;
+        return TD;
     }
 
     public void open() throws DbException, TransactionAbortedException {
-        // some code goes here
+        child.open();
+        fetched = false;
+        super.open();
     }
 
     public void close() {
-        // some code goes here
+        child.close();
+        super.close();
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
-        // some code goes here
+        child.rewind();
+        fetched = false;
+        // ensure that Operator.next == null
+        super.close();
+        super.open();
     }
 
     /**
@@ -50,8 +62,23 @@ public class Delete extends Operator {
      * @see BufferPool#deleteTuple
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
-        // some code goes here
-        return null;
+        if (fetched) {
+            return null;
+        }
+        int count = 0;
+        while (child.hasNext()) {
+            Tuple tuple = child.next();
+            try {
+                Database.getBufferPool().deleteTuple(tid, tuple);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            ++count;
+        }
+        Tuple result = new Tuple(TD);
+        result.setField(0, new IntField(count));
+        fetched = true;
+        return result;
     }
 
     @Override
