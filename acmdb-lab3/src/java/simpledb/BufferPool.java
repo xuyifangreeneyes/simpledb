@@ -131,8 +131,16 @@ public class BufferPool {
     private void updateDirtiedPages(TransactionId tid, ArrayList<Page> dirtiedPages) {
         for (Page dirtied : dirtiedPages) {
             dirtied.markDirty(true, tid);
-            // evict some page when buffer pool is full?
-            pages.replace(dirtied.getId(), dirtied);
+            // evict some page when buffer pool is full
+            PageId pid = dirtied.getId();
+            if (!pages.containsKey(pid) && pages.size() == numPages) {
+                try {
+                    evictPage();
+                } catch (DbException e) {
+                    e.printStackTrace();
+                }
+            }
+            pages.put(pid, dirtied);
         }
     }
 
