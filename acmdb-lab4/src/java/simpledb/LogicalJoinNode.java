@@ -65,6 +65,7 @@ public class LogicalJoinNode {
     
     @Override public boolean equals(Object o) {
         LogicalJoinNode j2 =(LogicalJoinNode)o;
+        // why?
         return (j2.t1Alias.equals(t1Alias)  || j2.t1Alias.equals(t2Alias)) && (j2.t2Alias.equals(t1Alias)  || j2.t2Alias.equals(t2Alias));
     }
     
