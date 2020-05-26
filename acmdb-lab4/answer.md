@@ -1,3 +1,4 @@
+ff
 - In addition to nested-loops join, I also implemented hash equi-join, which is more efficient than nested-loops join but may scan the second table more than once.
   
 - I didn't change any API.
