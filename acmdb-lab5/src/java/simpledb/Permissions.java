@@ -20,6 +20,16 @@ public class Permissions {
     return "UNKNOWN";
   }
 
+  public boolean equals(Object o) {
+    if (this == o)
+      return true;
+    if (o == null)
+      return false;
+    if (getClass() != o.getClass())
+      return false;
+    return permLevel == ((Permissions) o).permLevel;
+  }
+
   public static final Permissions READ_ONLY = new Permissions(0);
   public static final Permissions READ_WRITE = new Permissions(1);
 
