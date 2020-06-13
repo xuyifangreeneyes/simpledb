@@ -26,7 +26,7 @@ import simpledb.Predicate.Op;
  * System test for the BTree
  */
 public class BTreeTest extends SimpleDbTestBase {
-    private final static Random r = new Random();
+    private final static Random r = new Random(0);
     
     private static final int POLL_INTERVAL = 100;
     
@@ -192,6 +192,9 @@ public class BTreeTest extends SimpleDbTestBase {
 					found = true;
 					break;
 				}
+			}
+			if (!found) {
+				System.out.println(i);
 			}
 			assertTrue(found);
 			it.close();

@@ -1,5 +1,6 @@
 package simpledb;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -12,15 +13,7 @@ public class PageLock {
         this.pid = pid;
     }
 
-    public synchronized void require(TransactionId tid, Permissions perm) {
-        while (!requireOnce(tid, perm)) {
-            try {
-                wait();
-            } catch (InterruptedException e) {}
-        }
-    }
-
-    private boolean requireOnce(TransactionId tid, Permissions perm) {
+    public synchronized boolean require(TransactionId tid, Permissions perm) {
         if (perm == Permissions.READ_WRITE) {
             return requireExclusive(tid);
         } else {
@@ -57,9 +50,9 @@ public class PageLock {
         }
     }
 
-    public synchronized boolean isExclusive(TransactionId tid) {
-        return exclusive == tid;
-    }
+//    public synchronized boolean isExclusive(TransactionId tid) {
+//        return exclusive == tid;
+//    }
 
     public synchronized void release(TransactionId tid) {
         if (exclusive == null) {
@@ -78,6 +71,16 @@ public class PageLock {
         } else {
             return exclusive == tid;
         }
+    }
+
+    public synchronized Set<TransactionId> getHolders() {
+        Set<TransactionId> holders = new HashSet<>();
+        if (exclusive == null) {
+            holders.addAll(shared);
+        } else {
+            holders.add(exclusive);
+        }
+        return holders;
     }
 
 }

@@ -34,8 +34,7 @@ public class BufferPool {
     private final int numPages;
     private final Random generator = new Random();
 
-    private final ConcurrentHashMap<PageId, PageLock> pageLocks = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<TransactionId, Set<PageId>> lockHolders = new ConcurrentHashMap<>();
+    private final LockManager lockManager = new LockManager();
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -75,14 +74,10 @@ public class BufferPool {
      * @param pid the ID of the requested page
      * @param perm the requested permissions on the page
      */
-    public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
+    public Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
 
-        pageLocks.putIfAbsent(pid, new PageLock(pid));
-        pageLocks.get(pid).require(tid, perm);
-
-        lockHolders.putIfAbsent(tid, new HashSet<>());
-        lockHolders.get(tid).add(pid); // For a fixed transaction, it is a single thread.
+        lockManager.requireLock(tid, pid, perm);
 
         if (pages.containsKey(pid)) {
             return pages.get(pid);
@@ -106,8 +101,7 @@ public class BufferPool {
      * @param pid the ID of the page to unlock
      */
     public  void releasePage(TransactionId tid, PageId pid) {
-        assert pageLocks.containsKey(pid);
-        pageLocks.get(pid).release(tid);
+        lockManager.releaseLock(tid, pid);
     }
 
     /**
@@ -121,8 +115,7 @@ public class BufferPool {
 
     /** Return true if the specified transaction has a lock on the specified page */
     public boolean holdsLock(TransactionId tid, PageId pid) {
-        pageLocks.putIfAbsent(pid, new PageLock(pid));
-        return pageLocks.get(pid).hold(tid);
+        return lockManager.holdLock(tid, pid);
     }
 
     /**
@@ -134,7 +127,7 @@ public class BufferPool {
      */
     public void transactionComplete(TransactionId tid, boolean commit)
         throws IOException {
-        Set<PageId> lockedPids = lockHolders.get(tid);
+        Set<PageId> lockedPids = lockManager.getHeldLocks(tid);
         if (lockedPids == null) {
             // The transaction never calls getPage. Is it possible?
             return;
@@ -147,10 +140,7 @@ public class BufferPool {
         }
 
         // release locks held by the transaction
-        lockHolders.remove(tid);
-        for (PageId pid : lockedPids) {
-            pageLocks.get(pid).release(tid);
-        }
+        lockManager.releaseLocks(tid);
     }
 
     private void updateDirtiedPages(TransactionId tid, ArrayList<Page> dirtiedPages) {
@@ -256,7 +246,7 @@ public class BufferPool {
     /** Write all pages of the specified transaction to disk.
      */
     public synchronized  void flushPages(TransactionId tid) throws IOException {
-        Set<PageId> lockedPids = lockHolders.get(tid);
+        Set<PageId> lockedPids = lockManager.getHeldLocks(tid);
         if (lockedPids == null) {
             return;
         }
@@ -277,7 +267,7 @@ public class BufferPool {
      * Rollback dirtied pages when aborting the transaction.
      */
     public synchronized void rollbackPages(TransactionId tid) {
-        Set<PageId> lockedPids = lockHolders.get(tid);
+        Set<PageId> lockedPids = lockManager.getHeldLocks(tid);
         if (lockedPids == null) {
             return;
         }

@@ -185,7 +185,7 @@ public class BTreeUtility {
 			int minValue, int maxValue, Map<Integer, Integer> columnSpecification,
 			ArrayList<ArrayList<Integer>> tuples) {
 
-		Random r = new Random();
+		Random r = new Random(0);
 
 		// Fill the tuples list with generated values
 		for (int i = 0; i < rows; ++i) {
@@ -682,27 +682,29 @@ public class BTreeUtility {
 		}
 
 		public void run() {
-			try {
-				Tuple t = BTreeUtility.getBTreeTuple(tupdata);
-				Database.getBufferPool().insertTuple(tid, bf.getId(), t);
-				Database.getBufferPool().transactionComplete(tid);
-				ArrayList<Integer> tuple = tupleToList(t);
-				insertedTuples.put(tuple);
-				synchronized(slock) {
-					success = true;
-				}
-			} catch (Exception e) {
-				if(!(e instanceof TransactionAbortedException)) {
-					e.printStackTrace();
-				}
-				synchronized(elock) {
-					error = e;
-				}
-
+			synchronized (insertedTuples) {
 				try {
-					Database.getBufferPool().transactionComplete(tid, false);
-				} catch (java.io.IOException e2) {
-					e2.printStackTrace();
+					Tuple t = BTreeUtility.getBTreeTuple(tupdata);
+					Database.getBufferPool().insertTuple(tid, bf.getId(), t);
+					Database.getBufferPool().transactionComplete(tid);
+					ArrayList<Integer> tuple = tupleToList(t);
+					insertedTuples.put(tuple);
+					synchronized (slock) {
+						success = true;
+					}
+				} catch (Exception e) {
+					if (!(e instanceof TransactionAbortedException)) {
+						e.printStackTrace();
+					}
+					synchronized (elock) {
+						error = e;
+					}
+
+					try {
+						Database.getBufferPool().transactionComplete(tid, false);
+					} catch (java.io.IOException e2) {
+						e2.printStackTrace();
+					}
 				}
 			}
 		}
@@ -769,42 +771,44 @@ public class BTreeUtility {
 		}
 
 		public void run() {
-			try {
-				tuple = insertedTuples.take();
-				if(bf.getTupleDesc().numFields() != tuple.size()) {
-					throw new DbException("tuple desc mismatch");
-				}
-				IntField key = new IntField(tuple.get(bf.keyField()));
-				IndexPredicate ipred = new IndexPredicate(Op.EQUALS, key);
-				DbFileIterator it = bf.indexIterator(tid, ipred);
-				it.open();
-				while(it.hasNext()) {
-					Tuple t = it.next();
-					if(tupleToList(t).equals(tuple)) {
-						Database.getBufferPool().deleteTuple(tid, t);
-						break;
-					}
-				}
-				it.close();
-				Database.getBufferPool().transactionComplete(tid);
-				synchronized(slock) {
-					success = true;
-				}
-			} catch (Exception e) {
-				if(!(e instanceof TransactionAbortedException)) {
-					e.printStackTrace();
-				}
-				synchronized(elock) {
-					error = e;
-				}
-
+			synchronized (insertedTuples) {
 				try {
-					insertedTuples.put(tuple);
-					Database.getBufferPool().transactionComplete(tid, false);
-				} catch (java.io.IOException e2) {
-					e2.printStackTrace();
-				} catch (InterruptedException e3) {
-					e3.printStackTrace();
+					tuple = insertedTuples.take();
+					if (bf.getTupleDesc().numFields() != tuple.size()) {
+						throw new DbException("tuple desc mismatch");
+					}
+					IntField key = new IntField(tuple.get(bf.keyField()));
+					IndexPredicate ipred = new IndexPredicate(Op.EQUALS, key);
+					DbFileIterator it = bf.indexIterator(tid, ipred);
+					it.open();
+					while (it.hasNext()) {
+						Tuple t = it.next();
+						if (tupleToList(t).equals(tuple)) {
+							Database.getBufferPool().deleteTuple(tid, t);
+							break;
+						}
+					}
+					it.close();
+					Database.getBufferPool().transactionComplete(tid);
+					synchronized (slock) {
+						success = true;
+					}
+				} catch (Exception e) {
+					if (!(e instanceof TransactionAbortedException)) {
+						e.printStackTrace();
+					}
+					synchronized (elock) {
+						error = e;
+					}
+
+					try {
+						insertedTuples.put(tuple);
+						Database.getBufferPool().transactionComplete(tid, false);
+					} catch (java.io.IOException e2) {
+						e2.printStackTrace();
+					} catch (InterruptedException e3) {
+						e3.printStackTrace();
+					}
 				}
 			}
 		}

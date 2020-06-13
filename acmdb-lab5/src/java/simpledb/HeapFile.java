@@ -97,7 +97,7 @@ public class HeapFile implements DbFile {
     }
 
     // see DbFile.java for javadocs
-    public ArrayList<Page> insertTuple(TransactionId tid, Tuple t)
+    public synchronized ArrayList<Page> insertTuple(TransactionId tid, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
         ArrayList<Page> dirtiedPages = new ArrayList<>();
         int numPages = numPages();
