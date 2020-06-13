@@ -193,9 +193,6 @@ public class BTreeTest extends SimpleDbTestBase {
 					break;
 				}
 			}
-			if (!found) {
-				System.out.println(i);
-			}
 			assertTrue(found);
 			it.close();
 		}
