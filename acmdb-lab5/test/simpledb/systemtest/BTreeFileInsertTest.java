@@ -165,7 +165,7 @@ public class BTreeFileInsertTest extends SimpleDbTestBase {
 
 	@Test
 	public void testSplitRootPage() throws Exception {
-		for (int k = 0; k < 100; ++k) {
+//		for (int k = 0; k < 100; ++k) {
 			// This should create a packed B+ tree with no empty slots
 			// There are 503 keys per internal page (504 children) and 502 tuples per leaf page
 			// 504 * 502 = 253008
@@ -221,7 +221,7 @@ public class BTreeFileInsertTest extends SimpleDbTestBase {
 				fit.close();
 				assertTrue(found);
 			}
-		}
+//		}
 	}
 
 	@Test

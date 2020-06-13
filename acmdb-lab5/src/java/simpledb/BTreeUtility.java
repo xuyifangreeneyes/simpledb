@@ -185,7 +185,7 @@ public class BTreeUtility {
 			int minValue, int maxValue, Map<Integer, Integer> columnSpecification,
 			ArrayList<ArrayList<Integer>> tuples) {
 
-		Random r = new Random(0);
+		Random r = new Random();
 
 		// Fill the tuples list with generated values
 		for (int i = 0; i < rows; ++i) {
@@ -682,7 +682,7 @@ public class BTreeUtility {
 		}
 
 		public void run() {
-			synchronized (insertedTuples) {
+//			synchronized (insertedTuples) {
 				try {
 					Tuple t = BTreeUtility.getBTreeTuple(tupdata);
 					Database.getBufferPool().insertTuple(tid, bf.getId(), t);
@@ -706,7 +706,7 @@ public class BTreeUtility {
 						e2.printStackTrace();
 					}
 				}
-			}
+//			}
 		}
 		
 		private void init(BTreeFile bf, int[] tupdata, BlockingQueue<ArrayList<Integer>> insertedTuples) {
@@ -771,7 +771,7 @@ public class BTreeUtility {
 		}
 
 		public void run() {
-			synchronized (insertedTuples) {
+//			synchronized (insertedTuples) {
 				try {
 					tuple = insertedTuples.take();
 					if (bf.getTupleDesc().numFields() != tuple.size()) {
@@ -810,7 +810,7 @@ public class BTreeUtility {
 						e3.printStackTrace();
 					}
 				}
-			}
+//			}
 		}
 		
 		private void init(BTreeFile bf, BlockingQueue<ArrayList<Integer>> insertedTuples) {

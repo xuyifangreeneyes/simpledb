@@ -26,7 +26,7 @@ import simpledb.Predicate.Op;
  * System test for the BTree
  */
 public class BTreeTest extends SimpleDbTestBase {
-    private final static Random r = new Random(0);
+    private final static Random r = new Random();
     
     private static final int POLL_INTERVAL = 100;
     

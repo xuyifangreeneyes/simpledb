@@ -273,10 +273,10 @@ public class BufferPool {
         }
         for (PageId pid : lockedPids) {
             Page page = pages.get(pid);
-            if (page == null || page.isDirty() == null) {
+            if (page == null) {
                 continue;
             }
-            assert page.isDirty() == tid;
+//            assert page.isDirty() == tid;
             Page beforeImage = page.getBeforeImage();
             assert beforeImage != null;
             pages.put(pid, beforeImage);
